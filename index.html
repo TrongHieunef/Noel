@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Thorxinhhkk - Giáng Sinh An Lành</title>
+    <title>Thorxinhhkk - Giáng Sinh Cá Nhân Hóa</title>
     <style>
         :root {
             --xmas-red: #D32F2F;
@@ -34,7 +34,8 @@
             margin-bottom: 20px; text-shadow: 0 2px 4px black; 
         }
 
-        #btnStart {
+        /* Nút bấm */
+        .btn-main {
             pointer-events: auto; cursor: pointer;
             background: linear-gradient(to bottom, #D32F2F, #8B0000); 
             color: white; border: 2px solid var(--xmas-gold);
@@ -42,8 +43,14 @@
             font-weight: 800; font-size: 18px;
             box-shadow: 0 0 30px rgba(211, 47, 47, 0.6);
             transition: 0.3s;
+            margin: 5px;
         }
-        #btnStart:hover { transform: scale(1.1); }
+        .btn-main:hover { transform: scale(1.05); }
+        
+        #btnUpload { 
+            background: linear-gradient(to bottom, #1B5E20, #0a2e0c);
+            border-style: dashed;
+        }
 
         #webcam-box {
             position: absolute; top: 20px; right: 20px;
@@ -67,7 +74,10 @@
         🖐 <b>Bung tay:</b> Xem ảnh | ↔️ <b>Quét:</b> Xoay<br>
         👌 <b>Chụm:</b> Zoom | ✌️ <b>Chữ V:</b> I LOVE YOU
     </div>
-    <button id="btnStart">BẮT ĐẦU</button>
+    
+    <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+    <button id="btnUpload" class="btn-main">📸 CHỌN 4 ẢNH KỶ NIỆM</button>
+    <button id="btnStart" class="btn-main" style="display: none;">BẮT ĐẦU TRẢI NGHIỆM</button>
 </div>
 
 <div id="webcam-box" style="display:none;">
@@ -79,33 +89,28 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
 <script>
-    const MUSIC_URL = "./audio.mp3";
+    // --- CẤU HÌNH NHẠC ---
+    const MUSIC_URL = "./audio.mp3"; 
     let bgMusic = new Audio(MUSIC_URL);
     bgMusic.loop = true; 
     bgMusic.volume = 0.8;
 
+    // --- CẤU HÌNH THREE.JS ---
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-    
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    document.body.appendChild(renderer.domElement);
+
+    const Y_OFFSET = 3;
     function adjustCamera() {
         const aspect = window.innerWidth / window.innerHeight;
         camera.position.set(0, 8, aspect < 1 ? 55 : 40);
     }
     adjustCamera();
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    document.body.appendChild(renderer.domElement);
-
-    document.getElementById('btnStart').addEventListener('click', function() {
-        this.style.display = 'none';
-        document.getElementById('webcam-box').style.display = 'block';
-        bgMusic.play().catch(e => console.log("Lỗi nhạc:", e));
-        initCamera();
-    });
-
-    // --- SNOW ---
+    // --- HIỆU ỨNG TUYẾT ---
     const snowCount = 1000;
     const snowGeo = new THREE.BufferGeometry();
     const snowPos = new Float32Array(snowCount * 3);
@@ -119,7 +124,7 @@
     const snow = new THREE.Points(snowGeo, snowMat);
     scene.add(snow);
 
-    // --- LOVE TEXT ---
+    // --- CHỮ "I LOVE YOU" ---
     function createTextParticles(text, yOff) {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -145,14 +150,9 @@
     const lovePoints = createTextParticles("I LOVE YOU", 10);
     scene.add(lovePoints);
 
-    const Y_OFFSET = 3;
-    
-    // --- NÂNG CẤP CÂY THÔNG (Tăng số lượng hạt) ---
-    const treeCount = 4500; // Tăng hạt lá
-    const starCount = 350;  // Tăng hạt ngôi sao
-    const garlandCount = 1500; // Tăng mạnh hạt dây đèn
+    // --- HỆ THỐNG CÂY THÔNG HẠT ---
+    const treeCount = 4500, starCount = 350, garlandCount = 1500;
     const totalParticles = treeCount + starCount + garlandCount;
-    
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(totalParticles * 3);
     const colors = new Float32Array(totalParticles * 3);
@@ -160,7 +160,6 @@
     const velocities = new Float32Array(totalParticles * 3);
 
     let idx = 0;
-    // Lá thông xanh
     for (let i = 0; i < treeCount; i++) {
         const h = Math.random() * 20, rBase = (20 - h) * 0.45, r = rBase * (0.85 + Math.random() * 0.3), a = Math.random() * Math.PI * 2;
         const x = Math.cos(a) * r, y = h - 5 + Y_OFFSET, z = Math.sin(a) * r;
@@ -169,7 +168,6 @@
         velocities.set([(Math.random()-0.5)*1.2, (Math.random()-0.5)*1.2, (Math.random()-0.5)*1.2], idx * 3);
         idx++;
     }
-    // Ngôi sao đỉnh
     for (let i = 0; i < starCount; i++) {
         const r = Math.random() * 1.5, theta = Math.random() * Math.PI * 2, phi = Math.acos(2 * Math.random() - 1);
         const x = r * Math.sin(phi) * Math.cos(theta), y = r * Math.sin(phi) * Math.sin(theta) + 15.5 + Y_OFFSET, z = r * Math.cos(phi);
@@ -177,18 +175,14 @@
         colors.set([1, 0.9, 0], idx * 3); velocities.set([x*2.5, Math.random()*1.5, z*2.5], idx * 3);
         idx++;
     }
-    // Dây đèn rực rỡ (Vàng, Đỏ, Trắng xen kẽ)
     for (let i = 0; i < garlandCount; i++) {
         const t = i / garlandCount, h = t * 20, r = (20 - h) * 0.48 + 0.3, angle = t * Math.PI * 2 * 12;
         const x = Math.cos(angle)*r, y = h-5+Y_OFFSET, z = Math.sin(angle)*r;
         positions.set([x, y, z], idx * 3); origins.set([x, y, z], idx * 3);
-        
-        // Phối màu đèn: 50% Vàng Gold, 40% Đỏ, 10% Trắng lấp lánh
         const rand = Math.random();
-        if(rand < 0.5) colors.set([1, 0.84, 0], idx * 3); // Gold
-        else if(rand < 0.9) colors.set([1, 0.1, 0.1], idx * 3); // Red
-        else colors.set([1, 1, 1], idx * 3); // White Sparkle
-        
+        if(rand < 0.5) colors.set([1, 0.84, 0], idx * 3);
+        else if(rand < 0.9) colors.set([1, 0.1, 0.1], idx * 3);
+        else colors.set([1, 1, 1], idx * 3);
         velocities.set([(Math.random()-0.5)*3, (Math.random()-0.5)*3, (Math.random()-0.5)*3], idx * 3);
         idx++;
     }
@@ -197,12 +191,7 @@
     const tree = new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.22, vertexColors: true, blending: THREE.AdditiveBlending, transparent: true }));
     scene.add(tree);
 
-    // --- POLAROID IMAGES ---
-    const imgGroup = new THREE.Group();
-    const textureLoader = new THREE.TextureLoader();
-    const imageSources = ['image1.jpg', 'image2.jpg', 'image3.jpg', 'image4.jpg']; 
-    const imageMeshes = [];
-
+    // --- CANVAS TẠO VIỀN KẸO GẬY ---
     const candyCanvas = document.createElement('canvas');
     candyCanvas.width = 64; candyCanvas.height = 64;
     const ctxC = candyCanvas.getContext('2d');
@@ -213,57 +202,99 @@
     candyTex.wrapS = candyTex.wrapT = THREE.RepeatWrapping;
     candyTex.repeat.set(8, 8);
 
-    imageSources.forEach((src, i) => {
-        textureLoader.load(src, (texture) => {
-            const photoW = 6, photoH = 7.5;
-            const pad = 0.4, btm = 1.6;
+    // --- HỆ THỐNG QUẢN LÝ ẢNH UPLOAD ---
+    const imgGroup = new THREE.Group();
+    const imageMeshes = [];
+    const fileInput = document.getElementById('fileInput');
+    const btnUpload = document.getElementById('btnUpload');
+    const btnStart = document.getElementById('btnStart');
+    const textureLoader = new THREE.TextureLoader();
 
-            const mesh = new THREE.Mesh(
-                new THREE.PlaneGeometry(photoW, photoH),
-                new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true, opacity: 0 })
-            );
+    btnUpload.addEventListener('click', () => fileInput.click());
 
-            const frame = new THREE.Mesh(
-                new THREE.PlaneGeometry(photoW + pad*2, photoH + pad + btm),
-                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 })
-            );
-            frame.position.set(0, -btm/2 + pad/2, -0.02);
-            mesh.add(frame);
+    fileInput.addEventListener('change', function(e) {
+        const files = e.target.files;
+        if (files.length < 4) {
+            alert("Hãy chọn ít nhất 4 tấm ảnh nhé!");
+            return;
+        }
 
-            const candyBorder = new THREE.Mesh(
-                new THREE.PlaneGeometry(photoW + 0.2, photoH + 0.2),
-                new THREE.MeshBasicMaterial({ map: candyTex, transparent: true, opacity: 0 })
-            );
-            candyBorder.position.z = -0.01;
-            mesh.add(candyBorder);
+        // Dọn dẹp ảnh cũ
+        imageMeshes.forEach(m => imgGroup.remove(m));
+        imageMeshes.length = 0;
 
-            const txtCanvas = document.createElement('canvas');
-            txtCanvas.width = 256; txtCanvas.height = 64;
-            const tCtx = txtCanvas.getContext('2d');
-            tCtx.fillStyle = '#D32F2F'; tCtx.font = 'italic Bold 28px Arial';
-            tCtx.textAlign = 'center'; tCtx.fillText('Merry Xmas 🎄', 128, 45);
-            const txtTex = new THREE.CanvasTexture(txtCanvas);
-            const txtMesh = new THREE.Mesh(
-                new THREE.PlaneGeometry(3, 0.75),
-                new THREE.MeshBasicMaterial({ map: txtTex, transparent: true, opacity: 0 })
-            );
-            txtMesh.position.set(0, -photoH/2 - 0.6, 0.01);
-            mesh.add(txtMesh);
-
-            const angle = (i / 4) * Math.PI * 2;
-            mesh.userData.basePos = new THREE.Vector3(Math.cos(angle) * 18, 6 + Y_OFFSET, Math.sin(angle) * 18);
-            imageMeshes.push(mesh); imgGroup.add(mesh);
+        Array.from(files).slice(0, 4).forEach((file, i) => {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const texture = textureLoader.load(event.target.result);
+                createPolaroid(texture, i);
+            };
+            reader.readAsDataURL(file);
         });
+
+        btnUpload.style.display = 'none';
+        btnStart.style.display = 'inline-block';
     });
+
+    function createPolaroid(texture, i) {
+        const photoW = 6, photoH = 7.5;
+        const pad = 0.4, btm = 1.6;
+
+        const mesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(photoW, photoH),
+            new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide, transparent: true, opacity: 0 })
+        );
+
+        const frame = new THREE.Mesh(
+            new THREE.PlaneGeometry(photoW + pad*2, photoH + pad + btm),
+            new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 })
+        );
+        frame.position.set(0, -btm/2 + pad/2, -0.02);
+        mesh.add(frame);
+
+        const candyBorder = new THREE.Mesh(
+            new THREE.PlaneGeometry(photoW + 0.2, photoH + 0.2),
+            new THREE.MeshBasicMaterial({ map: candyTex, transparent: true, opacity: 0 })
+        );
+        candyBorder.position.z = -0.01;
+        mesh.add(candyBorder);
+
+        const txtCanvas = document.createElement('canvas');
+        txtCanvas.width = 256; txtCanvas.height = 64;
+        const tCtx = txtCanvas.getContext('2d');
+        tCtx.fillStyle = '#D32F2F'; tCtx.font = 'italic Bold 28px Arial';
+        tCtx.textAlign = 'center'; tCtx.fillText('Merry Xmas 🎄', 128, 45);
+        const txtTex = new THREE.CanvasTexture(txtCanvas);
+        const txtMesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(3, 0.75),
+            new THREE.MeshBasicMaterial({ map: txtTex, transparent: true, opacity: 0 })
+        );
+        txtMesh.position.set(0, -photoH/2 - 0.6, 0.01);
+        mesh.add(txtMesh);
+
+        const angle = (i / 4) * Math.PI * 2;
+        mesh.userData.basePos = new THREE.Vector3(Math.cos(angle) * 18, 6 + Y_OFFSET, Math.sin(angle) * 18);
+        imageMeshes.push(mesh);
+        imgGroup.add(mesh);
+    }
     scene.add(imgGroup);
 
+    // --- LOGIC ĐIỀU KHIỂN ---
     let handData = { active: false, open: false, pinch: false, vSign: false, x: 0.5 };
     let anim = { explode: 0, zoom: 1, rot: 0, love: 0 };
+
+    btnStart.addEventListener('click', function() {
+        this.style.display = 'none';
+        document.getElementById('webcam-box').style.display = 'block';
+        bgMusic.play().catch(e => console.log("Lỗi nhạc:", e));
+        initCamera();
+    });
 
     function renderLoop() {
         requestAnimationFrame(renderLoop);
         const time = Date.now() * 0.002;
         
+        // Tuyết rơi
         const sArray = snow.geometry.attributes.position.array;
         for (let i = 0; i < snowCount; i++) {
             sArray[i*3+1] -= 0.04;
@@ -271,15 +302,18 @@
         }
         snow.geometry.attributes.position.needsUpdate = true;
 
+        // Smooth animations
         anim.love += ((handData.vSign ? 1 : 0) - anim.love) * 0.1;
         anim.explode += ((handData.open && !handData.vSign ? 1 : 0) - anim.explode) * 0.06;
         anim.zoom += ((handData.pinch ? 2.2 : 1) - anim.zoom) * 0.1;
         anim.rot += (((handData.x - 0.5) * -Math.PI * 2.5) - anim.rot) * 0.1;
 
+        // I Love You Effect
         lovePoints.material.opacity = anim.love;
         lovePoints.position.y = Math.sin(time) * 1.2; 
         lovePoints.scale.set(1 + anim.love*0.2, 1 + anim.love*0.2, 1);
 
+        // Tree Explosion Effect
         const pArray = tree.geometry.attributes.position.array;
         const explodeFactor = anim.explode * 20;
         for (let i = 0; i < totalParticles; i++) {
@@ -292,16 +326,17 @@
         tree.material.opacity = 1 - anim.love; 
         tree.rotation.y += 0.002;
 
-        // Hiệu ứng đèn nhấp nháy cho hạt dây đèn
+        // Garland Blinking
         if (tree.geometry.attributes.color) {
             const cArr = tree.geometry.attributes.color.array;
             for(let i = treeCount; i < totalParticles; i++) {
                 const i3 = i * 3;
-                if(i % 5 === 0) cArr[i3] *= (0.95 + Math.sin(time*5)*0.05); // Nháy nhẹ
+                if(i % 5 === 0) cArr[i3] *= (0.95 + Math.sin(time*5)*0.05);
             }
             tree.geometry.attributes.color.needsUpdate = true;
         }
 
+        // Polaroid Interaction
         imgGroup.rotation.y = anim.rot;
         let maxZ = -9999, facingMesh = null;
         imageMeshes.forEach(mesh => {
@@ -325,11 +360,13 @@
     }
     renderLoop();
 
+    // --- MEDIAPIPE HANDS ---
     function initCamera() {
         const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
         hands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
         
         hands.onResults((results) => {
+            const status = document.getElementById('status-card');
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const lm = results.multiHandLandmarks[0];
                 handData.active = true;
@@ -338,15 +375,14 @@
                 handData.pinch = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y) < 0.06;
                 handData.vSign = lm[8].y < lm[6].y && lm[12].y < lm[10].y && lm[16].y > lm[14].y;
 
-                const status = document.getElementById('status-card');
                 if(handData.vSign) { status.innerText = "💖 I LOVE YOU 💖"; status.style.color = "#FF69B4"; }
                 else if(handData.pinch) { status.innerText = "🔍 ĐANG ZOOM ẢNH"; status.style.color = "#00FFFF"; }
                 else if(handData.open) { status.innerText = "🖐 BUNG ẢNH POLAROID"; status.style.color = "#FFD700"; }
                 else { status.innerText = "✊ NẮM TAY ĐỂ THU CÂY"; status.style.color = "white"; }
             } else {
                 handData.active = false;
-                document.getElementById('status-card').innerText = "🎄 GIÁNG SINH AN LÀNH 🎄";
-                document.getElementById('status-card').style.color = "#FFD700";
+                status.innerText = "🎄 GIÁNG SINH AN LÀNH 🎄";
+                status.style.color = "#FFD700";
             }
         });
         const cam = new Camera(document.getElementById('video'), { 
